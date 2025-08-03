@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Diet Assistant Chatbot</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+      background: #f7f7f7;
+    }
+    button {
+      font-size: 1.2rem;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+    }
+    .output {
+      margin-top: 1.5rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🎤 Talk to the Diet Assistant</h2>
+  <button onclick="startRecognition()">Start Talking</button>
+
+  <div class="output">
+    <p><strong>You said:</strong> <span id="userText">...</span></p>
+    <p><strong>Diet Plan:</strong> <span id="responseText">...</span></p>
+  </div>
+
+  <script>
+    const API_URL = "https://your-app.onrender.com/diet"; // ⬅️ Replace with your actual Render backend URL
+
+    function startRecognition() {
+      const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.start();
+
+      recognition.onresult = async (event) => {
+        const speech = event.results[0][0].transcript;
+        document.getElementById("userText").innerText = speech;
+
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symptoms: speech })
+        });
+
+        const data = await response.json();
+        const reply = data.reply;
+
+        document.getElementById("responseText").innerText = reply;
+        speakText(reply);
+      };
+
+      recognition.onerror = (event) => {
+        alert("Speech recognition error: " + event.error);
+      };
+    }
+
+    function speakText(text) {
+      const synth = window.speechSynthesis;
+      const utter = new SpeechSynthesisUtterance(text);
+      synth.speak(utter);
+    }
+  </script>
+
+</body>
+</html>
