@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify
 import google.generativeai as genai
 import os
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)  # 👈 This allows all domains (including Netlify) to access the API
+
 
 # === CONFIGURE GEMINI ===
 GEMINI_API_KEY = os.getenv("AIzaSyBoNQnTCf-_H5o22KRIuwym4r1bAH4RrqM")  # Use environment variable
