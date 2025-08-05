@@ -70,13 +70,15 @@ def get_diet_plan(symptom_text):
     prompt = f"""
     I am building a diet assistant chatbot. The user has reported the following symptom(s): "{symptom_text}".
     Based on these symptoms, suggest a simple, healthy, and practical daily diet plan.
-    Keep it clear, concise, and beginner-friendly, just give me the diet plan, don't say unnecessary stuff, and don't give asterisk.
+    Keep it clear, concise, and beginner-friendly, just give me the diet plan, don't say unnecessary stuff, and don't use asterisks, bullet points, or special characters.
     """
     try:
         response = model.generate_content(prompt)
-        return response.text.strip()
+        cleaned_text = re.sub(r"[*•\-]+", "", response.text).strip()
+        return cleaned_text
     except Exception as e:
         return f"Failed to get response from Gemini: {e}"
+
 
 # === API ENDPOINT ===
 @app.route("/diet", methods=["POST"])
