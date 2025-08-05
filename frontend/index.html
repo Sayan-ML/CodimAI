@@ -5,63 +5,174 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Diet Assistant Chatbot</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: sans-serif;
-      padding: 2rem;
-      max-width: 600px;
-      margin: auto;
-      background: #f7f7f7;
-    }
-    button {
-      font-size: 1.2rem;
-      padding: 0.6rem 1.2rem;
-      cursor: pointer;
-    }
-    .output {
-      margin-top: 1.5rem;
-      background: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background-color: #f0f4f8;
       padding: 1rem;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      color: #222;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .intro {
+      text-align: center;
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .mic-button {
+      display: flex;
+      justify-content: center;
+      margin: 1.5rem 0;
+    }
+
+    #micButton {
+      width: 70px;
+      height: 70px;
+      background-color: #ff5252;
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      transition: box-shadow 0.3s ease;
+    }
+
+    #micButton.glow {
+      box-shadow: 0 0 20px 4px rgba(255, 82, 82, 0.8);
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+      70% { box-shadow: 0 0 0 14px rgba(255, 82, 82, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+    }
+
+    .output {
+      background: #f9f9f9;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-top: 1rem;
+      word-wrap: break-word;
+    }
+
+    .output p {
+      margin: 0.6rem 0;
+      font-size: 1rem;
+    }
+
+    .label {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .text {
+      color: #444;
+    }
+
+    /* Media Queries for smaller devices */
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.2rem;
+        border-radius: 12px;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+      }
+
+      #micButton {
+        width: 60px;
+        height: 60px;
+        font-size: 1.8rem;
+      }
+
+      .output p {
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
 <body>
 
-  <h2>🎤 Talk to the Diet Assistant</h2>
-  <button onclick="startRecognition()">Start Talking</button>
+  <div class="container">
+    <h1>🩺 Diet Assistant Chatbot</h1>
+    <div class="intro">
+      Tap the mic button and tell me your symptoms.<br/>
+      I’ll respond with a personalized, healthy diet plan.
+    </div>
 
-  <div class="output">
-    <p><strong>You said:</strong> <span id="userText">...</span></p>
-    <p><strong>Diet Plan:</strong> <span id="responseText">...</span></p>
+    <div class="mic-button">
+      <button id="micButton" onclick="startRecognition()">🎤</button>
+    </div>
+
+    <div class="output">
+      <p><span class="label">You said:</span> <span id="userText" class="text">...</span></p>
+      <p><span class="label">Diet Plan:</span> <span id="responseText" class="text">...</span></p>
+    </div>
   </div>
 
   <script>
-    const API_URL = "https://codimai-bzbi.onrender.com/"; // ⬅️ Replace with your actual Render backend URL
+    const API_URL = "https://codimai-1.onrender.com/diet";
+    const micButton = document.getElementById("micButton");
 
     function startRecognition() {
-      const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
       recognition.lang = "en-US";
+      micButton.classList.add("glow");
+
       recognition.start();
 
       recognition.onresult = async (event) => {
+        micButton.classList.remove("glow");
+
         const speech = event.results[0][0].transcript;
         document.getElementById("userText").innerText = speech;
 
-        const response = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ symptoms: speech })
-        });
+        try {
+          const response = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symptoms: speech })
+          });
 
-        const data = await response.json();
-        const reply = data.reply;
+          const data = await response.json();
+          const reply = data.reply;
 
-        document.getElementById("responseText").innerText = reply;
-        speakText(reply);
+          document.getElementById("responseText").innerText = reply;
+          speakText(reply);
+        } catch (err) {
+          document.getElementById("responseText").innerText = "❌ API error: " + err.message;
+        }
       };
 
       recognition.onerror = (event) => {
+        micButton.classList.remove("glow");
         alert("Speech recognition error: " + event.error);
       };
     }
